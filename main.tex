@@ -1,0 +1,77 @@
+\documentclass[12pt]{article}
+
+\usepackage{amsmath,amssymb, amsthm}
+\usepackage{mathtools}
+\usepackage{etoolbox}
+\usepackage{commath}
+\usepackage{xcolor}
+
+% Want: On first citation, names of all authors.
+\usepackage[longnamesfirst]{natbib}
+\bibliographystyle{abbrvnat}
+
+\usepackage{hyperref}
+\usepackage{cleveref}
+
+\def\eps{\varepsilon}
+\def\N{\mathbb{N}}
+\def\R{\mathbb{R}}
+
+\DeclareMathOperator{\Bern}{Bern}
+\DeclarePairedDelimiter\card{\lvert}{\rvert}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+\DeclarePairedDelimiter\paren()
+
+\newcommand{\comment}[1]{\textcolor{red}{[\textbf{#1}]}}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{claim}[theorem]{Claim}
+
+\crefname{theorem}{theorem}{theorems}
+\crefname{lemma}{lemma}{lemmas}
+\crefname{claim}{claim}{claims}
+\crefname{equation}{ineq.}{ineqs.}
+
+\newcommand{\parth}[1]{\textcolor{red}{[#1]}}
+\newcommand{\ort}{\textnormal{\textsc{ort}}}
+\newcommand{\ghd}{\textnormal{\textsc{ghd}}}
+
+\title{An exposition of the parallel repetition theorem}
+
+% Begone warnings:
+\hfuzz=1.0pt
+
+\providecommand\given{}
+
+% read the mathtools documentation about DeclarePairedDelimiterX
+\DeclarePairedDelimiterX{\brac}[1][]{
+\renewcommand\given{\nonscript\: \delimsize\vert \nonscript\: \mathopen{}}
+\ifblank{#1}{\,\cdot\,}{#1}}
+
+% probability macro with support for distribution under the Pr symbol, and
+% resizeable [] brackets.
+% xparse arguments:
+% s -> catch optional * (for auto resizing).
+% O{} -> catch optional arg (for manual resizing) -- defaults to empty.
+% E{_}{{}} -> catch optional argument following _ (for distribution under the
+%             Pr symbol) -- defaults to empty (nb: labelled experimental)
+% m -> catch mandatory argument (the event).
+% examples:
+% \Prob{E}, \Prob_{x}{E}, \Prob*_{x}{\frac EF}, \Prob[\Big]_{x}{E}...
+% note that this also supports a resizeable conditioning symbol (via \given)
+% \Prob*{E \given \frac EF}.
+\NewDocumentCommand{\Prob}{sO{}E{_}{{}}m}{%
+    \Pr_{#3}
+    \IfBooleanTF{#1}
+    {\brac*{#4}}
+    {\brac[#2]{#4}}
+}
+
+\begin{document}
+
+\maketitle
+
+\bibliography{references}
+
+\end{document}
