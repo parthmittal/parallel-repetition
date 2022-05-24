@@ -4,7 +4,7 @@
 \usepackage{mathtools}
 \usepackage{etoolbox}
 \usepackage{commath}
-\usepackage{xcolor}
+\usepackage[svgnames]{xcolor}
 
 % Want: On first citation, names of all authors.
 \usepackage[longnamesfirst]{natbib}
@@ -46,7 +46,11 @@
 
 % read the mathtools documentation about DeclarePairedDelimiterX
 \DeclarePairedDelimiterX{\brac}[1][]{
-\renewcommand\given{\nonscript\: \delimsize\vert \nonscript\: \mathopen{}}
+\renewcommand\given{\nonscript\: \delimsize\vert{} \nonscript\: \mathopen{}}
+\ifblank{#1}{\,\cdot\,}{#1}}
+
+\DeclarePairedDelimiterX{\Set}[1]\{\}{
+\renewcommand\given{\nonscript\: \delimsize\vert{} \nonscript\: \mathopen{}}
 \ifblank{#1}{\,\cdot\,}{#1}}
 
 % probability macro with support for distribution under the Pr symbol, and
@@ -62,16 +66,130 @@
 % note that this also supports a resizeable conditioning symbol (via \given)
 % \Prob*{E \given \frac EF}.
 \NewDocumentCommand{\Prob}{sO{}E{_}{{}}m}{%
-    \Pr_{#3}
-    \IfBooleanTF{#1}
-    {\brac*{#4}}
-    {\brac[#2]{#4}}
+  \Pr_{#3}
+  \IfBooleanTF{#1}
+  {\brac*{#4}}
+  {\brac[#2]{#4}}
 }
+
+\makeatletter
+\def\mathcolor#1#{\@mathcolor{#1}}
+\def\@mathcolor#1#2#3{%
+  \protect\leavevmode
+  \begingroup
+  \color#1{#2}#3%
+  \endgroup
+}
+\makeatother
+
+\newcommand{\OA}[1]{\mathcolor{DarkRed}{#1}}
+\newcommand{\OB}[1]{\mathcolor{DarkBlue}{#1}}
+\newcommand{\both}[1]{\mathcolor{DarkGreen}{#1}}
+
+\renewcommand\given{ \nonscript\: \vert{} \nonscript\: \mathopen{} }
+
+\newcommand{\St}{\widetilde{S}}
+\newcommand{\Tt}{\widetilde{T}}
+\newcommand{\Ut}{\widetilde{U}}
+\newcommand{\Vt}{\widetilde{V}}
+
+\newcommand{\Xt}{\widetilde{X}}
+\newcommand{\Yt}{\widetilde{Y}}
+
+\newcommand{\Uo}{\overline{U}}
+\newcommand{\uo}{\overline{u}}
 
 \begin{document}
 
 \maketitle
 
-\bibliography{references}
+\section{The simulation}
+
+Suppose, towards a contradiction, that there is some
+$k \leq \frac{\delta^2 n}{{10}^6 \log \card{\Sigma}}$ such that:
+\[
+\Prob[\Bigg]{ W_j \given \bigvee_{i \leq k} W_i } \geq \delta / 100
+\]
+for all $j > k$.
+
+We will try to embed an input distributed according to $P_{XY}$ into some
+index $j' > k$.
+
+For each $j > k$, define:
+\begin{itemize}
+  \item The uniformly random bit $D_j$, which is independent of all the other
+    random variables.
+  \item The random variable
+    \[
+      U_j = \begin{cases}
+        X_j & \text{if } D_j = 0\\
+        Y_j & \text{otherwise}
+      \end{cases}
+    \]
+    and its ``complement''
+    \[
+      \overline{U}_j = \begin{cases}
+        Y_j & \text{if } D_j = 0\\
+        X_j & \text{otherwise}
+      \end{cases}.
+    \]
+\end{itemize}
+
+For a fixed $j' > k$ (to be decided), the protocol is the following:
+\begin{enumerate}
+  \item Alice receives an input $\OA{x}$ distributed according to $X$, and Bob
+    receives $\OB{y}$ distributed according to $Y$.
+  \item Alice computes the distribution of
+    $\OA{\St\Xt_{j'} \given \Xt_{j'} = x}$,
+    and Bob computes the distribution of
+    $\OB{\St\Yt_{j'} \given \Yt_{j'} = y}$.
+  \item Using correlated sampling, Alice and Bob sample from their respective
+    distributions to obtain:
+    \[
+      \both{
+        \underbrace{
+          x_{\leq k}, y_{\leq k}, d_{> k} \setminus d_{j'},
+      \uo_{> k} \setminus \uo_{j'}}_{s}},
+      \OA{x_{j'}}, \OB{y_{j'}},
+    \]
+    distributed according to $P_{\St\Xt_{j'}\Yt_{j'}}$.
+  \item Using private randomness, they both extend their part of the sample to
+    obtain $\OA{x^n}$ and $\OB{y^n}$ distributed according to
+    \[
+      \Xt^n, \Yt^n \given \St = s, \Xt_{j'} = x, \Yt_{j'} = y.
+    \]
+\end{enumerate}
+
+\subsection{From $\St, \Xt_{j'}$ to $\Xt^n$}
+
+We would like to show that conditioning on (a fixed value of) $\St, \Xt_{j'}$,
+the random variable $\Xt^n$ is independent of $\Yt^n$.
+As a warm-up, we first show this without the conditioning on $W$, i.e., we
+show that $X^n$ is independent of $Y^n$ after conditioning on $S, X_{j'}$.
+
+What information does fixing $S = s$ and $X_{j'} = x_{j'}$ give us?
+Straight out of the box, we know $x_{\leq k}$ and $x_{j'}$.
+For any other coordinate $i \notin \brac{k} \cup \Set{j'}$:
+\begin{itemize}
+  \item either $d_i = 1$, in which case we know $\overline{u}_i = X_i$ from
+    $S$,
+  \item or $d_i = 0$, in which case we know $\uo_i = y_i$ from $s$.
+    Note that $X_i$ depends only on $Y_i$, and hence conditioning on the above,
+    is independent of $Y_{\leq n}$.
+\end{itemize}
+
+Returning to $\St$ and $\Xt_{j'}$, we will use additionally the fact that
+a fixed value $s$ sampled from $\St$ contains a partial winning transcript
+\[
+  \paren{x_{\leq k}, y_{\leq k}, a_{\leq k}, b_{\leq k}}.
+\]
+As before for $i \in \brac{k} \cup \Set{j}$ or such that $d_i = 1$, we already
+know $x_{i}$.
+However, for the remaining $i$, $\Xt_i$ is not just dependent on $\Yt_i$.
+For different values of $y_{> k}$, Bob could in principle output different
+values $b_{\leq k}$, which (since we need to win the first $k$ games) could
+change $a_{\leq k}$, and hence $x_i$.
+The key observation is that fixing $S$ fixes the output of the first $k$ games,
+so conditioning on this eliminates the dependence between $x_i$ and $y_{> k}$.
 
 \end{document}
